@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Honestly Optimized Hybrid Mamba Implementation
+Optimized Hybrid Mamba Implementation
 ==============================================
 
 A mathematically correct, genuinely optimized implementation of Hybrid Mamba for MLX.
