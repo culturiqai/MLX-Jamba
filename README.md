@@ -1,204 +1,175 @@
-# Honest Mamba: A No-BS Implementation of Hybrid Mamba for MLX
+# Hybrid Mamba Implementation for MLX
 
-> *"Better to be honestly useful than deceptively impressive."*
+An educational implementation of Hybrid Mamba architecture combining Mamba (state-space models) with Transformer attention mechanisms for MLX framework.
 
-## 🎯 What This Is
+## ⚠️ Important Notice
 
-An intellectually honest implementation of Hybrid Mamba that prioritizes truth over hype. This project explicitly calls out "optimization theater" and implements only real, measurable improvements.
+This is an **educational/research implementation** with significant performance limitations. It is not optimized for production use.
 
-Created in 2 days through careful AI-assisted development, with extensive human oversight ensuring every line serves a purpose.
+## Overview
 
-## 🚀 Key Features
+This repository contains two hybrid architectures:
+1. **Simple Hybrid**: Alternating Mamba and Attention layers with learnable state bridges
+2. **True Hybrid**: Parallel processing of both paths with complexity-based routing (experimental)
 
-### Two Hybrid Architectures
+## Features
 
-1. **Simple Hybrid**: Alternating Mamba/Attention layers with learnable state bridges
-2. **True Hybrid**: Parallel processing with intelligent routing based on input complexity
+### ✅ Working Features
+- Complete Mamba block implementation with selective SSM
+- Multi-head attention with causal masking
+- Configurable hybrid layer placement
+- Basic text generation
+- RMSNorm and proper weight initialization
+- Extensive testing suite
 
-### Real Optimizations (Actually Implemented)
-- ✅ Vectorized sampling operations
-- ✅ Memory-efficient chunked attention  
-- ✅ Hybrid state bridging between layer types
-- ✅ Clean, maintainable code
-- ✅ Comprehensive test suite
+### ⚠️ Partially Implemented
+- KV cache structure (defined but not utilized in generation)
+- Chunked attention (basic implementation)
+- Cross-modal attention mechanisms
+- Adaptive routing (runs both paths regardless)
 
-### Honest Limitations
-- ❌ Sequential scan cannot be parallelized (fundamental Mamba limitation)
-- ❌ KV caching not yet implemented (TODO)
-- ❌ Memory usage similar to Transformers
-- ❌ Training slower than optimized Transformers
-- ❌ No Flash Attention equivalent
+### ❌ Not Implemented
+- Top-p sampling (returns original logits)
+- Gradient checkpointing integration
+- Optimized generation with KV cache
+- Vectorized scan operations
 
-## 📖 Why This Exists
-
-The ML field is plagued with implementations that:
-- Claim optimizations that don't actually optimize
-- Hide limitations behind complex code
-- Prioritize appearing impressive over being useful
-
-This implementation takes a different approach:
-- **Every optimization is real and measured**
-- **Every limitation is clearly documented**
-- **Every line of code is explained**
-
-## 🏗️ Architecture
-
-### Simple Hybrid (Original)
-```python
-Layer 0: mamba
-Layer 1: mamba  
-Layer 2: attention (with state bridge from mamba)
-Layer 3: mamba (with state bridge from attention)
-```
-
-### True Hybrid (Innovative)
-- **Parallel Processing**: Both Mamba and Attention process simultaneously
-- **Complexity Analysis**: Routes inputs based on pattern detection
-- **Cross-Modal Fusion**: Paths can attend to each other's outputs
-- **Adaptive Routing**: Dynamically chooses processing strategy
-
-## 🔧 Installation
+## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/honest-mamba.git
-cd honest-mamba
+# Requires MLX framework
+pip install mlx
+pip install numpy
 
-# Install dependencies
-pip install mlx numpy
+# Clone repository
+git clone <repository-url>
+cd hybrid-mamba-mlx
 ```
 
-## 💻 Usage
+## Quick Start
 
-### Basic Example
 ```python
-from honest_mamba import HybridMambaConfig, HybridMambaModel
+from hybrid_mamba import HybridMambaConfig, HybridMambaModel
 
 # Configure model
 config = HybridMambaConfig(
     d_model=512,
     n_layers=12,
-    attention_layers=[3, 6, 9],  # For simple hybrid
-    vocab_size=50000
+    attention_layers=[3, 6, 9],  # Attention at layers 3, 6, 9
+    vocab_size=32000
 )
 
 # Create model
-model = HybridMambaModel(config, use_true_hybrid=False)  # Simple hybrid
-# or
-model = HybridMambaModel(config, use_true_hybrid=True)   # True hybrid
+model = HybridMambaModel(config, use_true_hybrid=False)
 
 # Generate text
+input_ids = mx.array([[1, 2, 3, 4, 5]])
 output = model.generate(input_ids, max_new_tokens=50)
 ```
 
-### Analyze Routing (True Hybrid)
+## Architecture Details
+
+### Simple Hybrid (Recommended)
+- Alternates between Mamba and Attention layers
+- Learnable state bridges transfer information between layer types
+- More efficient than true hybrid
+
+### True Hybrid (Experimental)
+- Processes input through both Mamba and Attention simultaneously
+- Uses complexity analysis for routing decisions
+- Currently inefficient due to parallel execution
+
+## Performance Considerations
+
+### ⚠️ Known Limitations
+
+1. **Sequential Scan**: The core Mamba scan uses a Python loop, making it significantly slower than optimized implementations
+2. **No KV Caching**: Despite being implemented, KV cache is not used in generation
+3. **Sampling**: Top-k sampling uses nested loops; top-p is unimplemented
+4. **Memory Usage**: No optimization for long sequences
+5. **True Hybrid Overhead**: Runs both paths always, doubling computation
+
+### Benchmark Results
+```
+Model Size: 512d, 12 layers
+- Forward pass: ~0.5s for 32 tokens (batch=2)
+- Generation: ~2s for 50 tokens (no KV cache benefit)
+- Memory: ~200MB for small model
+```
+
+## Code Structure
+
+```
+hybrid_mamba.py
+├── Configuration (HybridMambaConfig)
+├── Core Components
+│   ├── SelectiveSSM (State Space Model)
+│   ├── CausalConv1d
+│   ├── MambaBlock
+│   └── MultiHeadAttention
+├── Hybrid Components  
+│   ├── HybridStateBridge
+│   ├── ComplexityAnalyzer
+│   └── TrueHybridLayer
+├── Main Model (HybridMambaModel)
+└── Tests (embedded - should be separated)
+```
+
+## Usage Examples
+
+### Basic Generation
 ```python
-# See how the model routes different patterns
-routing_info = model.get_routing_analysis(input_ids)
-print(f"Mamba usage: {routing_info['average_usage']['mamba']:.1%}")
-print(f"Attention usage: {routing_info['average_usage']['attention']:.1%}")
+# Simple generation
+generated = model.generate(
+    input_ids,
+    max_new_tokens=100,
+    temperature=0.8,
+    top_k=50  # Note: top_p not implemented
+)
 ```
 
-## 📊 Performance
-
-### Honest Benchmarks
-- **Simple Hybrid**: ~1.2x slower than pure Mamba, ~0.9x speed of Transformer
-- **True Hybrid**: ~2x slower than pure Mamba (runs both paths)
-- **Memory**: Similar to Transformer of equivalent size
-
-### Good For
-- Research and experimentation
-- Learning Mamba architecture  
-- Small to medium models (<1B parameters)
-- Understanding hybrid architectures
-
-### Not Good For
-- Large-scale production training
-- Real-time applications requiring maximum speed
-- Competing with highly optimized implementations
-
-## 🧪 Testing
-
-```bash
-# Run comprehensive test suite
-python honest_mamba.py
-
-# Test specific components
-python -c "from honest_mamba import test_mamba_block; test_mamba_block()"
+### Routing Analysis (True Hybrid only)
+```python
+# Analyze routing decisions
+analysis = model.get_routing_analysis(input_ids)
+print(f"Mamba usage: {analysis['average_usage']['mamba']:.1%}")
+print(f"Attention usage: {analysis['average_usage']['attention']:.1%}")
 ```
 
-## 🤝 Contributing
+## Development Status
 
-Contributions are welcome, but please maintain the honesty principle:
-- Don't add "optimizations" without benchmarks
-- Document all limitations clearly
-- Explain what your code actually does
-- Test edge cases
+This implementation prioritizes clarity and educational value over performance. Key areas needing improvement:
 
-## 📝 Origin Story
+1. Vectorize all sequential operations
+2. Implement KV caching in generation
+3. Complete sampling methods
+4. Separate tests into proper test files
+5. Optimize memory usage
+6. Implement conditional routing (not parallel)
 
-This implementation was created by a university dropout who:
-- Started learning to code 8 months ago with simple HTML
-- Learned to collaborate effectively with AI (Claude + Cursor)
-- Built this in 2 days through systematic analysis
-- Prioritized understanding over credentials
+## Contributing
 
-The process:
-1. Create with Cursor (Claude)
-2. Scrutinize with Claude (separate chat)
-3. Fix issues using Cursor with Claude Opus 4 recommendations
-4. Test and validate every claim
+Contributions welcome, especially for:
+- Performance optimizations
+- Completing unimplemented features
+- Adding proper benchmarks
+- Improving documentation
 
-## 🔍 What You'll Learn
+## License
 
-1. **Real vs Fake Optimizations**: See exactly what actually improves performance
-2. **Mamba Internals**: Understand how selective SSMs really work
-3. **Hybrid Architectures**: Learn multiple ways to combine Mamba and Attention
-4. **AI Collaboration**: Example of effective human-AI development
+MIT
 
-## ⚠️ Production Use
+## Citation
 
-This is primarily an educational implementation. For production use:
-
-1. Implement missing optimizations (KV cache, etc.)
-2. Add proper error handling
-3. Optimize the sequential scan
-4. Add request batching for SaaS
-5. See `production/` folder (coming soon)
-
-## 📜 License
-
-MIT License - Use freely, but please maintain the honesty principle.
-
-## 🙏 Acknowledgments
-
-- Original Mamba paper authors
-- MLX team for the framework
-- Claude AI for development assistance
-- The ML community for needing honest implementations
-
-## 📚 Citations
-
-If you use this in research, please cite:
+If you use this code for research, please cite:
 ```bibtex
-@software{honest_mamba,
-  title = {Honest Mamba: A No-BS Implementation of Hybrid Mamba},
-  year = {2024},
-  url = {https://github.com/yourusername/honest-mamba}
-}
+Aditya Tiwari
 ```
 
-## 🗺️ Roadmap
+## Acknowledgments
 
-- [ ] Implement actual KV caching
-- [ ] Optimize sequential scan with MLX operations
-- [ ] Add production-ready version
-- [ ] Create educational notebooks
-- [ ] Benchmark against other implementations
-- [ ] Add training code
+Based on the Mamba architecture paper and MLX framework examples.
 
 ---
 
-*"In a field full of marketing claims and optimization theater, sometimes the most radical thing you can do is tell the truth."*
-
-**Questions?** Open an issue. Found a fake optimization? Please report it!
+**Note**: This is an educational implementation. For production use, consider optimized alternatives or the official Mamba implementation.
